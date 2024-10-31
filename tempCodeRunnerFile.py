@@ -1,0 +1,2 @@
+
+goToStorageRoom.setFontSize(50)

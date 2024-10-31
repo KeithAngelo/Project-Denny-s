@@ -349,6 +349,15 @@ class Scene:
     def getSurface(self):
         return self.sceneSurface
     
+    def addToMainSurface(self, mainSurface): # this will disable the scene surface
+        mainSurface.addChildSurface(self)
+        if self.sceneSurface is not None:
+            self.sceneSurface.setVisible(False)
+    
+    def activate(self):
+        if self.sceneSurface is not None:
+            self.sceneSurface.setVisible(True)
+    
 class SceneManager:
     def __init__(self):
         pass
@@ -365,6 +374,37 @@ blank_surface.fill('Black')
 
 ############## ---------- MAIN CODE ---------- ##############
 
+class MainMenu(Scene):
+    def __init__(self, mainGameplayScene, myGameManager):
+        super().__init__()
+        self.sceneSurface = Surface(0,0,SCREEN_WIDTH,SCREEN_HEIGHT)
+
+
+
+class Gameplay(Scene):
+    def __init__(self, myGameManager):
+        super().__init__()
+        self.sceneSurface = Surface(0,0,SCREEN_WIDTH,SCREEN_HEIGHT)
+        self.mainMenuScene = None
+
+        self.UI_Surface = Surface(0,0,SCREEN_WIDTH,SCREEN_HEIGHT)
+    
+    def addMainMenuScene(self, mainMenuScene):
+        self.mainMenuScene = mainMenuScene
+
+
+### Constructing Scenes ###
+myGameManager = GameManager()
+
+gamePlayScene = Gameplay(myGameManager)
+mainMenuScene = MainMenu(myGameManager,gamePlayScene)
+
+gamePlayScene.addMainMenuScene(mainMenuScene)
+
+gamePlayScene.addToMainSurface(main_surface)
+mainMenuScene.addToMainSurface(main_surface)
+
+mainMenuScene.activate()
 
 # ------------ MAIN LOOP ------------ #
 

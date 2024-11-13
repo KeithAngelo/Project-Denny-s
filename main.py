@@ -336,33 +336,6 @@ class GameManager: # Object that stores game state that can be passed around
     def resetGame(self):
         pass
 
-class Scene:
-    def __init__(self):
-        self.sceneSurface = None
-
-        # Use polymorphism to setup 
-
-    def nextScene(self, newScene):
-        self.sceneSurface.setVisible(False)
-        newScene.sceneSurface.setVisible(True)
-    
-    def getSurface(self):
-        return self.sceneSurface
-    
-    def addToMainSurface(self, mainSurface): # this will disable the scene surface
-        mainSurface.addChildSurface(self)
-        if self.sceneSurface is not None:
-            self.sceneSurface.setVisible(False)
-    
-    def activate(self):
-        if self.sceneSurface is not None:
-            self.sceneSurface.setVisible(True)
-    
-class SceneManager:
-    def __init__(self):
-        pass
-    
-
 
 ### END OF CLASS SETUP
 myEventHandler = EventHandler()
@@ -374,42 +347,35 @@ blank_surface.fill('Black')
 
 ############## ---------- MAIN CODE ---------- ##############
 
-class MainMenu(Scene):
-    def __init__(self, mainGameplayScene, myGameManager):
-        super().__init__()
-        self.sceneSurface = Surface(0,0,SCREEN_WIDTH,SCREEN_HEIGHT)
-
-        MainMenuTitleScreenAnim = animation("Assets/UI Elements/Title Screen",24,71,".jpg","Title Screen",0,(1920,1080)) 
-        
-
-        
-
-
-
-class Gameplay(Scene):
-    def __init__(self, myGameManager):
-        super().__init__()
-        self.sceneSurface = Surface(0,0,SCREEN_WIDTH,SCREEN_HEIGHT)
-        self.mainMenuScene = None
-
-        self.UI_Surface = Surface(0,0,SCREEN_WIDTH,SCREEN_HEIGHT)
-    
-    def addMainMenuScene(self, mainMenuScene):
-        self.mainMenuScene = mainMenuScene
-
-
-### Constructing Scenes ###
 myGameManager = GameManager()
 
-gamePlayScene = Gameplay(myGameManager)
-mainMenuScene = MainMenu(myGameManager,gamePlayScene)
 
-gamePlayScene.addMainMenuScene(mainMenuScene)
+class MainMenuSurface(Surface):
+    def __init__(self, Xpos, Ypos, Xscale, Yscale):
+        super().__init__(Xpos, Ypos, Xscale, Yscale)
 
-gamePlayScene.addToMainSurface(main_surface)
-mainMenuScene.addToMainSurface(main_surface)
+        MainMenuBG_Animation = animation("Assets/UI Elements/Title Screen",24,71,".jpg","Title Screen",0,(SCREEN_WIDTH,SCREEN_HEIGHT))
+        MainMenuBG_Surface = Surface(0,0,SCREEN_WIDTH,SCREEN_HEIGHT)
+        MainMenuBG_Surface.setAnimation(MainMenuBG_Animation)
 
-mainMenuScene.activate()
+        self.addChildSurface(MainMenuBG_Surface)
+
+class GameplaySurface(Surface):
+    def __init__(self, Xpos, Ypos, Xscale, Yscale):
+        super().__init__(Xpos, Ypos, Xscale, Yscale)
+
+
+
+
+MainMenuMainSurface = MainMenuSurface(0,0,SCREEN_WIDTH,SCREEN_HEIGHT)
+GameplayMainSurface = GameplaySurface(0,0,SCREEN_WIDTH,SCREEN_HEIGHT)
+
+
+main_surface.addChildSurface(MainMenuMainSurface)
+
+main_surface.addChildSurface(GameplayMainSurface)
+GameplayMainSurface.setVisible(False)
+
 
 # ------------ MAIN LOOP ------------ #
 

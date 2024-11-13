@@ -1,2 +1,1 @@
 
-goToStorageRoom.setFontSize(50)

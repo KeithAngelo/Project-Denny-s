@@ -379,6 +379,11 @@ class MainMenu(Scene):
         super().__init__()
         self.sceneSurface = Surface(0,0,SCREEN_WIDTH,SCREEN_HEIGHT)
 
+        MainMenuTitleScreenAnim = animation("Assets/UI Elements/Title Screen",24,71,".jpg","Title Screen",0,(1920,1080)) 
+        
+
+        
+
 
 
 class Gameplay(Scene):

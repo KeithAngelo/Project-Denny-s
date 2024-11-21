@@ -419,6 +419,10 @@ class GameManager: # Object that stores game state that can be passed around
         self.gameStarted = False
         self.gameOver = False
     
+    def startGame(self):
+        self.clock.startClock()
+        self.gameStarted = True
+    
     def CheckClockEnded(self): # Will return False if clock still running
         if self.gameStarted and not self.gameOver:
             endHour = self.clock.endHour if self.clock.endHour > self.clock.startHour else (self.clock.endHour + 24)
@@ -426,6 +430,8 @@ class GameManager: # Object that stores game state that can be passed around
             if self.clock.getHour() >= endHour:
                 self.gameOver = True
                 return True
+        
+        return False
     
     def resetGame(self):
         self.gameStarted = False
@@ -469,7 +475,7 @@ class MainMenuSurface(Surface):
             self.nextSurface(self.myGameplaySurface)
 
             myGameManager.resetGame()
-            myGameManager.clock.startClock()
+            myGameManager.startGame()
         
         MainMenuPlayGameButton.setAction(toGameplay)
 
@@ -483,6 +489,9 @@ class MainMenuSurface(Surface):
 class GameplaySurface(Surface):
     def __init__(self, Xpos, Ypos, Xscale, Yscale):
         super().__init__(Xpos, Ypos, Xscale, Yscale)
+
+        self.winScreen = None
+        self.loseScreen = None
 
         self.viewIndex = 0 # index for cycling views
         self.GameplayViews = [] 
@@ -529,7 +538,9 @@ class GameplaySurface(Surface):
 
         def UpdateClock():
             self.clockText.setText(myGameManager.clock.getHourStandard())
-            myGameManager.CheckClockEnded()
+            if(myGameManager.CheckClockEnded()):
+                self.endShift()
+
 
         clockSurface.setUpdateFunc(UpdateClock)
 
@@ -576,7 +587,7 @@ class GameplaySurface(Surface):
         self.resetViews()
     
     def endShift(self): # When clock expires, transition to Win Screen
-        pass
+        self.nextSurface(self.winScreen)
 
     def gameLose(self): # transition to lose Screen
         pass
@@ -622,19 +633,41 @@ class DrivethroughSurface(Surface):
 
         self.addChildSurface(self.BG_Surface)
 
+class WinScreen(Surface):
+    def __init__(self, Xpos, Ypos, Xscale, Yscale):
+        super().__init__(Xpos, Ypos, Xscale, Yscale)
+
+        self.BG_Surface = Surface(0,0,SCREEN_WIDTH,SCREEN_HEIGHT)
+        self.BG_Surface.setImage(pygame.image.load("Assets/UI Elements/winScreen.jpg")) # Temp Win Screen
+
+        self.addChildSurface(self.BG_Surface)
+
+class LoseScreen(Surface):
+    def __init__(self, Xpos, Ypos, Xscale, Yscale):
+        super().__init__(Xpos, Ypos, Xscale, Yscale)
+
+        self.BG_Surface = Surface(0,0,SCREEN_WIDTH,SCREEN_HEIGHT)
+        self.BG_Surface.setImage(pygame.image.load("Assets/UI Elements/winScreen.jpg"))
+
+        self.addChildSurface(self.BG_Surface)
+
 
 
 
 MainMenuMainSurface = MainMenuSurface(0,0,SCREEN_WIDTH,SCREEN_HEIGHT)
 GameplayMainSurface = GameplaySurface(0,0,SCREEN_WIDTH,SCREEN_HEIGHT)
+winScreen = WinScreen(0,0,SCREEN_WIDTH,SCREEN_HEIGHT)
+
 
 MainMenuMainSurface.addGameplaySurface(GameplayMainSurface)
-
+GameplayMainSurface.winScreen = winScreen
 
 main_surface.addChildSurface(MainMenuMainSurface)
-
 main_surface.addChildSurface(GameplayMainSurface)
+main_surface.addChildSurface(winScreen)
+
 GameplayMainSurface.setVisible(False)
+winScreen.setVisible(False)
 
 
 # ------------ MAIN LOOP ------------ #

@@ -236,6 +236,10 @@ class Surface:
     
     def setUpdateFunc(self, func):
         self.updateFunc = func
+    
+    def nextSurface(self, newSurface):
+        self.setVisible(False)
+        newSurface.setVisible(True)
 
     def render(self, screen):
         if self.updateFunc is not None:
@@ -275,7 +279,7 @@ class Button (Surface):
         self.last_update_time = pygame.time.get_ticks()
         self.clickDelayms = 0 # Delay between allowable clicks 
 
-        self.AllowHold = True 
+        self.AllowHold = False
         self.onHold = False
 
         self.Hovered = False
@@ -330,10 +334,24 @@ class Button (Surface):
 
 class GameManager: # Object that stores game state that can be passed around
     def __init__(self):
+
         # Game State Variables
+        self.game_duration_ms = 600000 # one game is 10 minutes
+        self.startTime_ms = None # if none, game has not started
+
+        self.gameStarted = False
+        self.gameOver = False
+
         pass
 
+    def startGame(self):
+        self.startTime_ms = pygame.time.get_ticks()
+        self.gameStarted = True
+
     def resetGame(self):
+        pass
+
+    def getHour(self, startTime):
         pass
 
 
@@ -354,21 +372,157 @@ class MainMenuSurface(Surface):
     def __init__(self, Xpos, Ypos, Xscale, Yscale):
         super().__init__(Xpos, Ypos, Xscale, Yscale)
 
+        self.myGameplaySurface = None
+
         MainMenuBG_Animation = animation("Assets/UI Elements/Title Screen",24,71,".jpg","Title Screen",0,(SCREEN_WIDTH,SCREEN_HEIGHT))
         MainMenuBG_Surface = Surface(0,0,SCREEN_WIDTH,SCREEN_HEIGHT)
         MainMenuBG_Surface.setAnimation(MainMenuBG_Animation)
 
+        MainMenuPlayGameButton = Button(270,380,300,100,myEventHandler)
+
+        #surfaceGuide = pygame.Surface((100,100))
+        #surfaceGuide.fill('Red')
+        #MainMenuPlayGameButton.setImage(surfaceGuide)
+
+        def toGameplay():
+            if self.myGameplaySurface is None:
+                log("Gameplay Surface not added to Main Menu Surface")
+                return
+            self.nextSurface(self.myGameplaySurface)
+        
+        MainMenuPlayGameButton.setAction(toGameplay)
+
         self.addChildSurface(MainMenuBG_Surface)
+        self.addChildSurface(MainMenuPlayGameButton)
+    
+    def addGameplaySurface(self, gameplaySurface):
+        self.myGameplaySurface = gameplaySurface
+    
 
 class GameplaySurface(Surface):
     def __init__(self, Xpos, Ypos, Xscale, Yscale):
         super().__init__(Xpos, Ypos, Xscale, Yscale)
+
+        self.viewIndex = 0 # index for cycling views
+        self.GameplayViews = [] 
+        self.viewLabels = ["Counter","Kitchen","Drive Through","Storage Room"]
+        
+
+        self.counterSurface = CounterSurface(0,0,SCREEN_WIDTH,SCREEN_HEIGHT)
+        self.storageRoomSurface = StorageRoomSurface(0,0,SCREEN_WIDTH,SCREEN_HEIGHT)
+        self.kitchenSurface = KitchenSurface(0,0,SCREEN_WIDTH,SCREEN_HEIGHT)
+        self.driveThroughSurface = DrivethroughSurface(0,0,SCREEN_WIDTH,SCREEN_HEIGHT)
+
+        UI_Surface = Surface(0,0,SCREEN_WIDTH,SCREEN_HEIGHT)
+
+        self.view_label = text("Counter")
+        self.view_label.setFont("Assets/FONTS/VCR_OSD.ttf")
+        self.view_label.setTextColor("#FFFFFF")
+        self.view_label.setFontSize(50)
+
+        view_label_surface = Surface(520,630,100,100)
+        view_label_surface.addText(self.view_label)
+
+        UI_Surface.addChildSurface(view_label_surface)
+
+        leftButton = Button(100,620,50,50,myEventHandler)
+        leftButton.setImage(pygame.image.load("Assets/UI Elements/arrow left.jpg"))
+        leftButton.setAction(self.turnLeft)
+
+        rightButton = Button(1130,620,50,50,myEventHandler)
+        rightButton.setImage(pygame.image.load("Assets/UI Elements/arrow right.jpg"))
+        rightButton.setAction(self.turnRight)
+
+        UI_Surface.addChildSurface(rightButton)
+        UI_Surface.addChildSurface(leftButton)
+
+        # Order of views added to list affect order of view rotation
+        self.GameplayViews.append(self.counterSurface)
+        self.GameplayViews.append(self.kitchenSurface)
+        self.GameplayViews.append(self.driveThroughSurface)
+        self.GameplayViews.append(self.storageRoomSurface)
+
+        self.addChildSurface(self.counterSurface)
+        self.addChildSurface(self.kitchenSurface)
+        self.addChildSurface(self.driveThroughSurface)
+        self.addChildSurface(self.storageRoomSurface)
+        self.addChildSurface(UI_Surface)
+
+        self.resetViews()
+    
+    def resetViews(self):
+        if self.viewIndex < 0:
+            self.viewIndex = 0
+        
+        if self.viewIndex >= len(self.GameplayViews):
+            self.viewIndex = len(self.GameplayViews) - 1
+        
+        for i in range(len(self.GameplayViews)):
+            if i == self.viewIndex:        
+                self.GameplayViews[i].setVisible(True)
+            else:
+                
+                self.GameplayViews[i].setVisible(False)
+            print(f"{i} visible {self.GameplayViews[i].isVisible}")
+        
+        self.view_label.setText(self.viewLabels[self.viewIndex])
+    
+    def turnRight(self):
+        self.viewIndex = (self.viewIndex + 1) % len(self.GameplayViews)
+        self.resetViews()
+
+    def turnLeft(self):
+        self.viewIndex = (self.viewIndex - 1) % len(self.GameplayViews)
+        self.resetViews()
+
+    
+
+
+class CounterSurface(Surface):
+    def __init__(self, Xpos, Ypos, Xscale, Yscale):
+        super().__init__(Xpos, Ypos, Xscale, Yscale)
+
+        self.aBG_Surface = Surface(0,0,SCREEN_WIDTH,SCREEN_HEIGHT)
+        self.aBG_Surface.setImage(pygame.image.load("Assets/Counter/CounterBG.jpg"))
+
+        self.addChildSurface(self.aBG_Surface)
+    
+    
+
+class StorageRoomSurface(Surface):
+    def __init__(self, Xpos, Ypos, Xscale, Yscale):
+        super().__init__(Xpos, Ypos, Xscale, Yscale)
+
+        self.bBG_Surface = Surface(0,0,SCREEN_WIDTH,SCREEN_HEIGHT)
+        self.bBG_Surface.setImage(pygame.image.load("Assets/Storage Room/Storage_Room.png"))
+
+        self.addChildSurface(self.bBG_Surface)
+
+class KitchenSurface(Surface):
+    def __init__(self, Xpos, Ypos, Xscale, Yscale):
+        super().__init__(Xpos, Ypos, Xscale, Yscale)
+
+        self.BG_Surface = Surface(0,0,SCREEN_WIDTH,SCREEN_HEIGHT)
+        self.BG_Surface.setImage(pygame.image.load("Assets/Kitchen/KitchenBG.png"))
+
+        self.addChildSurface(self.BG_Surface)
+
+class DrivethroughSurface(Surface):
+    def __init__(self, Xpos, Ypos, Xscale, Yscale):
+        super().__init__(Xpos, Ypos, Xscale, Yscale)
+
+        self.BG_Surface = Surface(0,0,SCREEN_WIDTH,SCREEN_HEIGHT)
+        self.BG_Surface.setImage(pygame.image.load("Assets/Drive Through/DrivethroughBG.jpg"))
+
+        self.addChildSurface(self.BG_Surface)
 
 
 
 
 MainMenuMainSurface = MainMenuSurface(0,0,SCREEN_WIDTH,SCREEN_HEIGHT)
 GameplayMainSurface = GameplaySurface(0,0,SCREEN_WIDTH,SCREEN_HEIGHT)
+
+MainMenuMainSurface.addGameplaySurface(GameplayMainSurface)
 
 
 main_surface.addChildSurface(MainMenuMainSurface)

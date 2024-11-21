@@ -332,27 +332,94 @@ class Button (Surface):
     def setAction(self, action): # input a function
         self.myAction = action
 
+class GameClock:
+    def __init__(self):
+        self.game_duration_ms = 600000 # one game is 10 minutes
+        self.startTime_ms = None # if none, game has not started
+
+
+        self.startHour = 9 # 9 am
+        self.endHour = 17 # 5 pm
+
+    def startClock(self):
+        self.startTime_ms = pygame.time.get_ticks()
+        self.gameStarted = True
+    
+
+    def resetClock(self):
+        self.gameStarted = False
+        self.gameOver = False
+
+        self.startTime_ms = None
+
+    def getHour(self): # returns military time (24 hour)
+        if self.startTime_ms is None:
+            return None
+            
+        
+        startTime = self.startTime_ms
+        currentTime = pygame.time.get_ticks()
+        gameDuration_ms = self.game_duration_ms
+         
+        Timepassed_ms = currentTime - startTime
+        ShiftDuration_ms = 0
+
+
+        timeAdjustment = 0 if self.endHour > self.startHour else 24 # adjust time when shift loops into the morning
+
+        ShiftDuration_ms = (self.endHour - self.startHour + timeAdjustment) * 3600000
+        
+        
+
+        ShiftTimePassed_Hours = Timepassed_ms * (ShiftDuration_ms/gameDuration_ms) / 3600000
+
+        return self.startHour + ShiftTimePassed_Hours
+    
+    def militaryToStandardTime(self, input):
+        timeMilitary = int(input) # remove decimals
+        # timeMilitary = input
+        if timeMilitary > 23:
+            timeMilitary = timeMilitary % 24
+        if timeMilitary < 1:
+            out = timeMilitary + 12
+            return f"{out} AM"
+        
+        if timeMilitary < 13:
+            if timeMilitary < 12:
+                return f"{timeMilitary} AM"
+            return f"{timeMilitary} PM"
+        else:
+            if timeMilitary >= 24:
+                return f"{timeMilitary} AM"
+            out = timeMilitary - 12
+            return f"{out} PM"
+    
+    def getHourStandard(self):
+        return self.militaryToStandardTime(self.getHour())
+
 class GameManager: # Object that stores game state that can be passed around
     def __init__(self):
 
         # Game State Variables
-        self.game_duration_ms = 600000 # one game is 10 minutes
-        self.startTime_ms = None # if none, game has not started
+        self.clock = GameClock()
 
         self.gameStarted = False
         self.gameOver = False
+    
+    def CheckClockEnded(self): # Will return False if clock still running
+        if self.gameStarted and not self.gameOver:
+            endHour = self.clock.endHour if self.clock.endHour > self.clock.startHour else (self.clock.endHour + 24)
 
-        pass
-
-    def startGame(self):
-        self.startTime_ms = pygame.time.get_ticks()
-        self.gameStarted = True
-
+            if self.clock.getHour() >= endHour:
+                self.gameOver = True
+                return True
+    
     def resetGame(self):
-        pass
+        self.gameStarted = False
+        self.gameOver = False
 
-    def getHour(self, startTime):
-        pass
+        self.clock.resetClock()
+    
 
 
 ### END OF CLASS SETUP
@@ -380,15 +447,12 @@ class MainMenuSurface(Surface):
 
         MainMenuPlayGameButton = Button(270,380,300,100,myEventHandler)
 
-        #surfaceGuide = pygame.Surface((100,100))
-        #surfaceGuide.fill('Red')
-        #MainMenuPlayGameButton.setImage(surfaceGuide)
-
         def toGameplay():
             if self.myGameplaySurface is None:
                 log("Gameplay Surface not added to Main Menu Surface")
                 return
             self.nextSurface(self.myGameplaySurface)
+            myGameManager.clock.startClock()
         
         MainMenuPlayGameButton.setAction(toGameplay)
 
@@ -415,6 +479,7 @@ class GameplaySurface(Surface):
 
         UI_Surface = Surface(0,0,SCREEN_WIDTH,SCREEN_HEIGHT)
 
+        # Views label
         self.view_label = text("Counter")
         self.view_label.setFont("Assets/FONTS/VCR_OSD.ttf")
         self.view_label.setTextColor("#FFFFFF")
@@ -424,7 +489,8 @@ class GameplaySurface(Surface):
         view_label_surface.addText(self.view_label)
 
         UI_Surface.addChildSurface(view_label_surface)
-
+        
+        # Change Views buttons
         leftButton = Button(100,620,50,50,myEventHandler)
         leftButton.setImage(pygame.image.load("Assets/UI Elements/arrow left.jpg"))
         leftButton.setAction(self.turnLeft)
@@ -435,6 +501,24 @@ class GameplaySurface(Surface):
 
         UI_Surface.addChildSurface(rightButton)
         UI_Surface.addChildSurface(leftButton)
+
+        # Clock
+        self.clockText = text("clock")
+        self.clockText.setFontSize(70)
+        self.clockText.setTextColor("#FFFFFF")
+
+        clockSurface = Surface(10,10,100,100)
+        clockSurface.addText(self.clockText)
+
+        def UpdateClock():
+            self.clockText.setText(myGameManager.clock.getHourStandard())
+            myGameManager.CheckClockEnded()
+
+        clockSurface.setUpdateFunc(UpdateClock)
+
+        UI_Surface.addChildSurface(clockSurface)
+
+
 
         # Order of views added to list affect order of view rotation
         self.GameplayViews.append(self.counterSurface)
@@ -463,7 +547,6 @@ class GameplaySurface(Surface):
             else:
                 
                 self.GameplayViews[i].setVisible(False)
-            print(f"{i} visible {self.GameplayViews[i].isVisible}")
         
         self.view_label.setText(self.viewLabels[self.viewIndex])
     
@@ -474,6 +557,12 @@ class GameplaySurface(Surface):
     def turnLeft(self):
         self.viewIndex = (self.viewIndex - 1) % len(self.GameplayViews)
         self.resetViews()
+    
+    def endShift(self): # When clock expires, transition to Win Screen
+        pass
+
+    def gameLose(self): # transition to lose Screen
+        pass
 
     
 

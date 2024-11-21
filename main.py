@@ -57,6 +57,9 @@ class animation:
         self.frame_index = 0
         self.last_update_time = pygame.time.get_ticks()
 
+        self.actionWhenFinished = None # function called when animation finishes
+        self.FinishedPlaying = False
+
         self.loadFrames()
 
     
@@ -100,6 +103,9 @@ class animation:
    
             return self.frames[self.frame_index]
         
+        if self.FinishedPlaying:
+            return self.frames[self.inactiveDefaultFrame] # Default frame
+        
         if self.playTimes > 0: # When Played a certain number of times
             if self.frame_index >= self.totalFrames-1:
                 self.playTimes = self.playTimes - 1
@@ -109,7 +115,10 @@ class animation:
                 self.frame_index = (self.frame_index + 1) % (self.totalFrames)
                 self.last_update_time = current_time
             return self.frames[self.frame_index]
-        
+
+        if self.actionWhenFinished is not None:
+            self.actionWhenFinished() # function call when finished all frames
+
         return self.frames[self.inactiveDefaultFrame] # Default frame
     
     def isLooping(self, bool):
@@ -117,6 +126,10 @@ class animation:
 
     def play(self, timesPlayed):
         self.playTimes = timesPlayed
+        self.FinishedPlaying = False
+    
+    def setActionWhenFinished(self, action):
+        self.actionWhenFinished = action
 
 class text:
     def __init__(self, text):
@@ -442,6 +455,8 @@ class MainMenuSurface(Surface):
         self.myGameplaySurface = None
 
         MainMenuBG_Animation = animation("Assets/UI Elements/Title Screen",24,71,".jpg","Title Screen",0,(SCREEN_WIDTH,SCREEN_HEIGHT))
+        
+
         MainMenuBG_Surface = Surface(0,0,SCREEN_WIDTH,SCREEN_HEIGHT)
         MainMenuBG_Surface.setAnimation(MainMenuBG_Animation)
 
@@ -452,6 +467,8 @@ class MainMenuSurface(Surface):
                 log("Gameplay Surface not added to Main Menu Surface")
                 return
             self.nextSurface(self.myGameplaySurface)
+
+            myGameManager.resetGame()
             myGameManager.clock.startClock()
         
         MainMenuPlayGameButton.setAction(toGameplay)

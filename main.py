@@ -214,6 +214,9 @@ class Surface:
     def setVisible(self,bool):
         self.isVisible = bool
 
+        for Surface in self.child_layers: # Cascade Visibility
+            Surface.setVisible(bool)
+
     def Hide(self, bool):
         self.hidden = bool
 
@@ -602,6 +605,15 @@ class GameplaySurface(Surface):
     def gameLose(self): # transition to lose Screen
         pass
 
+    def setVisible(self, bool): # Avoid Cascading bug
+        super().setVisible(bool)
+        self.storageRoomSurface.setVisible(False)
+        self.driveThroughSurface.setVisible(False)
+        self.kitchenSurface.setVisible(False)
+        self.counterSurface.setVisible(True)
+
+    
+
     
 
 
@@ -620,8 +632,11 @@ class StorageRoomSurface(Surface):
     def __init__(self, Xpos, Ypos, Xscale, Yscale):
         super().__init__(Xpos, Ypos, Xscale, Yscale)
 
-        self.BG_Surface = Surface(0,0,SCREEN_WIDTH,SCREEN_HEIGHT)
-        self.BG_Surface.setImage(pygame.image.load("Assets/Storage Room/Storage_Room.png"))
+        self.StorageRoom_BG_Surface = Surface(0,0,SCREEN_WIDTH,SCREEN_HEIGHT)
+        self.StorageRoom_BG_Surface.setImage(pygame.image.load("Assets/Storage Room/Storage_Room.png"))
+
+        self.Freezer_BG_Surface = Surface(0,0,SCREEN_WIDTH,SCREEN_HEIGHT)
+        self.Freezer_BG_Surface.setImage(pygame.image.load("Assets/Storage Room/Freezer.png"))
 
         ### Storage Room Highlight ###
         self.StorageRoom_BurgerBunHighlight_Surface = Surface(0,0,SCREEN_WIDTH,SCREEN_HEIGHT)
@@ -634,9 +649,9 @@ class StorageRoomSurface(Surface):
         self.StorageRoom_FreezerHighlight_Surface = Surface(0,0,SCREEN_WIDTH,SCREEN_HEIGHT)
         self.StorageRoom_FreezerHighlight_Surface.setImage(pygame.image.load("Assets/Storage Room/Highlights/Storage Room Freezer Highlight.png"))
 
-        self.BG_Surface.addChildSurface(self.StorageRoom_BurgerBunHighlight_Surface)
-        self.BG_Surface.addChildSurface(self.StorageRoom_HotdogBunHighlight_Surface)
-        self.BG_Surface.addChildSurface(self.StorageRoom_FreezerHighlight_Surface)
+        self.StorageRoom_BG_Surface.addChildSurface(self.StorageRoom_BurgerBunHighlight_Surface)
+        self.StorageRoom_BG_Surface.addChildSurface(self.StorageRoom_HotdogBunHighlight_Surface)
+        self.StorageRoom_BG_Surface.addChildSurface(self.StorageRoom_FreezerHighlight_Surface)
 
         # Storage Room Buttons
         surfaceGuide = pygame.Surface((100,100))
@@ -654,28 +669,47 @@ class StorageRoomSurface(Surface):
 
 
         def FreezerButtonAction():
-            print("Freezer Opened")
+            self.StorageRoom_BG_Surface.nextSurface(self.Freezer_BG_Surface)
         self.FreezerButton = Button(350,280,250,350,myEventHandler)
         self.FreezerButton.setAction(FreezerButtonAction)
 
 
-        self.BG_Surface.addChildSurface(self.BurgerBun_Button)
-        self.BG_Surface.addChildSurface(self.FreezerButton)
-        self.BG_Surface.addChildSurface(self.HotdogBun_Button)
+        self.StorageRoom_BG_Surface.addChildSurface(self.BurgerBun_Button)
+        self.StorageRoom_BG_Surface.addChildSurface(self.FreezerButton)
+        self.StorageRoom_BG_Surface.addChildSurface(self.HotdogBun_Button)
 
         def BG_Surface_updateFunc():
             self.StorageRoom_BurgerBunHighlight_Surface.setVisible(self.BurgerBun_Button.Hovered)
             self.StorageRoom_FreezerHighlight_Surface.setVisible(self.FreezerButton.Hovered)
             self.StorageRoom_HotdogBunHighlight_Surface.setVisible(self.HotdogBun_Button.Hovered)
         
-        self.BG_Surface.setUpdateFunc(BG_Surface_updateFunc)
-
+        self.StorageRoom_BG_Surface.setUpdateFunc(BG_Surface_updateFunc)
 
         # Freezer
-        self.Freezer_BG_Surface = Surface(0,0,SCREEN_WIDTH,SCREEN_HEIGHT)
-        self.Freezer_BG_Surface.setImage(pygame.image.load("Assets/Storage Room/Freezer.png"))
+        Freezer_Return_Text = text("Return")
+        Freezer_Return_Text.setFontSize(50)
+        Freezer_Return_Text.setTextColor("#FFFFFF")
 
-        self.addChildSurface(self.BG_Surface)
+        
+        Freezer_Return_Button = Button(1100,10,150,100,myEventHandler)
+        Freezer_Return_Button.addText(Freezer_Return_Text)
+        def ReturnToStorageRoom():
+            self.Freezer_BG_Surface.nextSurface(self.StorageRoom_BG_Surface)
+        Freezer_Return_Button.setAction(ReturnToStorageRoom)
+
+        self.Freezer_BG_Surface.addChildSurface(Freezer_Return_Button)
+        
+
+
+        self.addChildSurface(self.Freezer_BG_Surface)
+        self.addChildSurface(self.StorageRoom_BG_Surface)
+        
+
+        self.Freezer_BG_Surface.setVisible(False)
+
+    
+    
+    
 
 class KitchenSurface(Surface):
     def __init__(self, Xpos, Ypos, Xscale, Yscale):

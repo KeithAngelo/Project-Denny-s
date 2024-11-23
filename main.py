@@ -1,5 +1,6 @@
 import pygame
 from sys import exit
+from enum import Enum
 
 ###  SETUP
 pygame.init()
@@ -13,6 +14,10 @@ pygame.display.set_caption(SCREEN_CAPTION)
 
 clock = pygame.time.Clock()
 CLOCK_TICK = 60
+
+surfaceGuide = pygame.Surface((100,100)) # For Guiding Use, delete when no longer needed
+surfaceGuide.fill('Red')
+
 
 ###  End of SETUP
 
@@ -258,14 +263,14 @@ class Surface:
         newSurface.setVisible(True)
 
     def render(self, screen):
-        if self.updateFunc is not None:
-            self.updateFunc()
-
         if self.isVisible is False:
             return
         
         if self.hidden:
             return
+        
+        if self.updateFunc is not None:
+            self.updateFunc()
         
         
 
@@ -416,7 +421,10 @@ class GameClock:
         return self.militaryToStandardTime(self.getHour())
 
 
-class Item:
+class Item(Enum):
+    BURGER_BUN = pygame.image.load("Assets/UI Elements/Item Icons/Burger Bun Icon.png")
+
+class Inventory:
     def __init__(self):
         pass
 
@@ -528,6 +536,8 @@ class GameplaySurface(Surface):
 
         # Inventory Slot
         self.UI_ItemSlotSurface = Surface(100,100,200,200)
+
+
         
         # Change Views buttons
         leftButton = Button(100,620,50,50,myEventHandler)
@@ -614,9 +624,6 @@ class GameplaySurface(Surface):
 
     
 
-    
-
-
 class CounterSurface(Surface):
     def __init__(self, Xpos, Ypos, Xscale, Yscale):
         super().__init__(Xpos, Ypos, Xscale, Yscale)
@@ -654,9 +661,6 @@ class StorageRoomSurface(Surface):
         self.StorageRoom_BG_Surface.addChildSurface(self.StorageRoom_FreezerHighlight_Surface)
 
         # Storage Room Buttons
-        surfaceGuide = pygame.Surface((100,100))
-        surfaceGuide.fill('Red')
-
         def HotdogBunButtonAction():
             print("Hotdog Bun Acquired")
         self.HotdogBun_Button = Button(670,130,230,150,myEventHandler)
@@ -685,7 +689,7 @@ class StorageRoomSurface(Surface):
         
         self.StorageRoom_BG_Surface.setUpdateFunc(BG_Surface_updateFunc)
 
-        # Freezer
+        # Freezer Return Button
         Freezer_Return_Text = text("Return")
         Freezer_Return_Text.setFontSize(50)
         Freezer_Return_Text.setTextColor("#FFFFFF")
@@ -699,6 +703,47 @@ class StorageRoomSurface(Surface):
 
         self.Freezer_BG_Surface.addChildSurface(Freezer_Return_Button)
         
+        # Freezer Highlight
+        self.Freezer_PattyHighlight_Surface = Surface(0,0,SCREEN_WIDTH,SCREEN_HEIGHT)
+        self.Freezer_PattyHighlight_Surface.setImage(pygame.image.load("Assets/Storage Room/Highlights/Freezer Patty Highlight.png"))    
+
+        self.Freezer_FriesRawHighlight_Surface = Surface(0,0,SCREEN_WIDTH,SCREEN_HEIGHT)
+        self.Freezer_FriesRawHighlight_Surface.setImage(pygame.image.load("Assets/Storage Room/Highlights/Freezer Fries Raw HIghlight.png")) 
+
+        self.Freezer_HotdogRawHighlight_Surface = Surface(0,0,SCREEN_WIDTH,SCREEN_HEIGHT)
+        self.Freezer_HotdogRawHighlight_Surface.setImage(pygame.image.load("Assets/Storage Room/Highlights/Freezer Hotdog Raw Highlight.png"))   
+
+        self.Freezer_BG_Surface.addChildSurface(self.Freezer_PattyHighlight_Surface)
+        self.Freezer_BG_Surface.addChildSurface(self.Freezer_FriesRawHighlight_Surface)
+        self.Freezer_BG_Surface.addChildSurface(self.Freezer_HotdogRawHighlight_Surface)
+
+        # Freezer Buttons
+        self.FriesRawButton = Button(320,340,200,250,myEventHandler)
+        def FriesRawButtonAction():
+            print("Raw Fries Acquired")
+        self.FriesRawButton.setAction(FriesRawButtonAction)
+
+        self.PattyButton = Button(570,440,150,200,myEventHandler)
+        def PattyButtonAction():
+            print("Patty Acquired")
+        self.PattyButton.setAction(PattyButtonAction)
+
+        self.HotdogRawButton = Button(740,390,200,250,myEventHandler)
+        def HotdogRawButtonAction():
+            print("Raw juicy hot dawg acquired")
+        self.HotdogRawButton.setAction(HotdogBunButtonAction)
+
+
+        self.Freezer_BG_Surface.addChildSurface(self.FriesRawButton)
+        self.Freezer_BG_Surface.addChildSurface(self.PattyButton)
+        self.Freezer_BG_Surface.addChildSurface(self.HotdogRawButton)
+
+        def Freezer_UpdateFunc():
+            self.Freezer_FriesRawHighlight_Surface.setVisible(self.FriesRawButton.Hovered)
+            self.Freezer_PattyHighlight_Surface.setVisible(self.PattyButton.Hovered)
+            self.Freezer_HotdogRawHighlight_Surface.setVisible(self.HotdogRawButton.Hovered)
+
+        self.Freezer_BG_Surface.setUpdateFunc(Freezer_UpdateFunc)
 
 
         self.addChildSurface(self.Freezer_BG_Surface)

@@ -345,7 +345,9 @@ class Button (Surface):
     def setAction(self, action): # input a function
         self.myAction = action
 
+
 class GameClock:
+
     def __init__(self):
         self.game_duration_ms = 600000 # one game is 10 minutes
         self.startTime_ms = None # if none, game has not started
@@ -409,6 +411,11 @@ class GameClock:
     
     def getHourStandard(self):
         return self.militaryToStandardTime(self.getHour())
+
+
+class Item:
+    def __init__(self):
+        pass
 
 class GameManager: # Object that stores game state that can be passed around
     def __init__(self):
@@ -515,6 +522,9 @@ class GameplaySurface(Surface):
         view_label_surface.addText(self.view_label)
 
         UI_Surface.addChildSurface(view_label_surface)
+
+        # Inventory Slot
+        self.UI_ItemSlotSurface = Surface(100,100,200,200)
         
         # Change Views buttons
         leftButton = Button(100,620,50,50,myEventHandler)
@@ -610,10 +620,62 @@ class StorageRoomSurface(Surface):
     def __init__(self, Xpos, Ypos, Xscale, Yscale):
         super().__init__(Xpos, Ypos, Xscale, Yscale)
 
-        self.bBG_Surface = Surface(0,0,SCREEN_WIDTH,SCREEN_HEIGHT)
-        self.bBG_Surface.setImage(pygame.image.load("Assets/Storage Room/Storage_Room.png"))
+        self.BG_Surface = Surface(0,0,SCREEN_WIDTH,SCREEN_HEIGHT)
+        self.BG_Surface.setImage(pygame.image.load("Assets/Storage Room/Storage_Room.png"))
 
-        self.addChildSurface(self.bBG_Surface)
+        ### Storage Room Highlight ###
+        self.StorageRoom_BurgerBunHighlight_Surface = Surface(0,0,SCREEN_WIDTH,SCREEN_HEIGHT)
+        self.StorageRoom_BurgerBunHighlight_Surface.setImage(pygame.image.load("Assets/Storage Room/Highlights/Storage Room Burger Bun Highlight.png"))
+
+        self.StorageRoom_HotdogBunHighlight_Surface = Surface(0,0,SCREEN_WIDTH,SCREEN_HEIGHT)
+        self.StorageRoom_HotdogBunHighlight_Surface.setImage(pygame.image.load("Assets/Storage Room/Highlights/Storage Room Hotdog Bun Highlight.png"))
+
+
+        self.StorageRoom_FreezerHighlight_Surface = Surface(0,0,SCREEN_WIDTH,SCREEN_HEIGHT)
+        self.StorageRoom_FreezerHighlight_Surface.setImage(pygame.image.load("Assets/Storage Room/Highlights/Storage Room Freezer Highlight.png"))
+
+        self.BG_Surface.addChildSurface(self.StorageRoom_BurgerBunHighlight_Surface)
+        self.BG_Surface.addChildSurface(self.StorageRoom_HotdogBunHighlight_Surface)
+        self.BG_Surface.addChildSurface(self.StorageRoom_FreezerHighlight_Surface)
+
+        # Storage Room Buttons
+        surfaceGuide = pygame.Surface((100,100))
+        surfaceGuide.fill('Red')
+
+        def HotdogBunButtonAction():
+            print("Hotdog Bun Acquired")
+        self.HotdogBun_Button = Button(670,130,230,150,myEventHandler)
+        self.HotdogBun_Button.setAction(HotdogBunButtonAction)
+
+        def BurgerBunButtonAction():
+            print("Burger Bun Acquired")
+        self.BurgerBun_Button = Button(870,300,250,150,myEventHandler)
+        self.BurgerBun_Button.setAction(BurgerBunButtonAction)
+
+
+        def FreezerButtonAction():
+            print("Freezer Opened")
+        self.FreezerButton = Button(350,280,250,350,myEventHandler)
+        self.FreezerButton.setAction(FreezerButtonAction)
+
+
+        self.BG_Surface.addChildSurface(self.BurgerBun_Button)
+        self.BG_Surface.addChildSurface(self.FreezerButton)
+        self.BG_Surface.addChildSurface(self.HotdogBun_Button)
+
+        def BG_Surface_updateFunc():
+            self.StorageRoom_BurgerBunHighlight_Surface.setVisible(self.BurgerBun_Button.Hovered)
+            self.StorageRoom_FreezerHighlight_Surface.setVisible(self.FreezerButton.Hovered)
+            self.StorageRoom_HotdogBunHighlight_Surface.setVisible(self.HotdogBun_Button.Hovered)
+        
+        self.BG_Surface.setUpdateFunc(BG_Surface_updateFunc)
+
+
+        # Freezer
+        self.Freezer_BG_Surface = Surface(0,0,SCREEN_WIDTH,SCREEN_HEIGHT)
+        self.Freezer_BG_Surface.setImage(pygame.image.load("Assets/Storage Room/Freezer.png"))
+
+        self.addChildSurface(self.BG_Surface)
 
 class KitchenSurface(Surface):
     def __init__(self, Xpos, Ypos, Xscale, Yscale):
@@ -653,19 +715,21 @@ class LoseScreen(Surface):
 
 
 
-
+# Surfaces Construction
 MainMenuMainSurface = MainMenuSurface(0,0,SCREEN_WIDTH,SCREEN_HEIGHT)
 GameplayMainSurface = GameplaySurface(0,0,SCREEN_WIDTH,SCREEN_HEIGHT)
 winScreen = WinScreen(0,0,SCREEN_WIDTH,SCREEN_HEIGHT)
 
-
+# Connecting Surfaces
 MainMenuMainSurface.addGameplaySurface(GameplayMainSurface)
 GameplayMainSurface.winScreen = winScreen
 
+# Adding Surfaces to main surface
 main_surface.addChildSurface(MainMenuMainSurface)
 main_surface.addChildSurface(GameplayMainSurface)
 main_surface.addChildSurface(winScreen)
 
+# Turning off Surfaces
 GameplayMainSurface.setVisible(False)
 winScreen.setVisible(False)
 

@@ -193,6 +193,9 @@ class Surface:
         self.updateFunc = None # Function that runs every frame
 
     def setImage(self, image): # Accepts 'pygame.image.load(path)' as arguement
+        if image is None:
+            self.image = None
+            return
         self.image = image.convert_alpha()
         self.image = pygame.transform.scale(self.image, (self.Xscale,self.Yscale))
     
@@ -423,16 +426,35 @@ class GameClock:
 
 class Item(Enum):
     BURGER_BUN = pygame.image.load("Assets/UI Elements/Item Icons/Burger Bun Icon.png")
+    BURGER = pygame.image.load("Assets/UI Elements/Item Icons/Burger Icon.png")
+    FRIES = pygame.image.load("Assets/UI Elements/Item Icons/Fries Icon.png")
+    FRIES_RAW = pygame.image.load("Assets/UI Elements/Item Icons/Fries Icon.png")
+    HOTDOG_BUN = pygame.image.load("Assets/UI Elements/Item Icons/Hotdog Bun Icon.png")
+    HOTDOG = pygame.image.load("Assets/UI Elements/Item Icons/Hotdog Icon.png")
+    PATTY = pygame.image.load("Assets/UI Elements/Item Icons/Patty Icon.png")
+    HOTDOG_RAW = pygame.image.load("Assets/UI Elements/Item Icons/Tender Juicy Icon.png")
 
 class Inventory:
     def __init__(self):
-        pass
+        self.slot = None
+    
+    def addItem(self, Item):
+        self.slot = Item
+    
+    def peekItem(self):
+        return self.slot
+    
+    def getItem(self):
+        item = self.slot
+        self.slot = None
+        return item
 
 class GameManager: # Object that stores game state that can be passed around
     def __init__(self):
 
         # Game State Variables
         self.clock = GameClock()
+        self.inventory = Inventory()
 
         self.gameStarted = False
         self.gameOver = False
@@ -535,7 +557,16 @@ class GameplaySurface(Surface):
         UI_Surface.addChildSurface(view_label_surface)
 
         # Inventory Slot
-        self.UI_ItemSlotSurface = Surface(100,100,200,200)
+        self.UI_ItemSlotSurface = Surface(20,50,80,80)
+
+        def updateInventory():
+            if myGameManager.inventory.slot is None:
+                self.UI_ItemSlotSurface.setImage(None)
+                return
+            self.UI_ItemSlotSurface.setImage(myGameManager.inventory.slot.value)
+        self.UI_ItemSlotSurface.setUpdateFunc(updateInventory)
+
+        UI_Surface.addChildSurface(self.UI_ItemSlotSurface)
 
 
         
@@ -662,11 +693,13 @@ class StorageRoomSurface(Surface):
 
         # Storage Room Buttons
         def HotdogBunButtonAction():
+            myGameManager.inventory.addItem(Item.HOTDOG_BUN)
             print("Hotdog Bun Acquired")
         self.HotdogBun_Button = Button(670,130,230,150,myEventHandler)
         self.HotdogBun_Button.setAction(HotdogBunButtonAction)
 
         def BurgerBunButtonAction():
+            myGameManager.inventory.addItem(Item.BURGER_BUN)
             print("Burger Bun Acquired")
         self.BurgerBun_Button = Button(870,300,250,150,myEventHandler)
         self.BurgerBun_Button.setAction(BurgerBunButtonAction)
@@ -720,16 +753,19 @@ class StorageRoomSurface(Surface):
         # Freezer Buttons
         self.FriesRawButton = Button(320,340,200,250,myEventHandler)
         def FriesRawButtonAction():
+            myGameManager.inventory.addItem(Item.FRIES_RAW)
             print("Raw Fries Acquired")
         self.FriesRawButton.setAction(FriesRawButtonAction)
 
         self.PattyButton = Button(570,440,150,200,myEventHandler)
         def PattyButtonAction():
+            myGameManager.inventory.addItem(Item.PATTY)
             print("Patty Acquired")
         self.PattyButton.setAction(PattyButtonAction)
 
         self.HotdogRawButton = Button(740,390,200,250,myEventHandler)
         def HotdogRawButtonAction():
+            myGameManager.inventory.addItem(Item.HOTDOG_RAW)
             print("Raw juicy hot dawg acquired")
         self.HotdogRawButton.setAction(HotdogBunButtonAction)
 

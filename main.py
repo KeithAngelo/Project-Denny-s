@@ -439,7 +439,8 @@ class Inventory:
         self.slot = None
     
     def addItem(self, Item):
-        self.slot = Item
+        if self.slot is None:
+            self.slot = Item
     
     def peekItem(self):
         return self.slot
@@ -448,6 +449,9 @@ class Inventory:
         item = self.slot
         self.slot = None
         return item
+
+    def clearSlot(self):
+        self.slot = None
 
 class GameManager: # Object that stores game state that can be passed around
     def __init__(self):
@@ -765,9 +769,9 @@ class StorageRoomSurface(Surface):
 
         self.HotdogRawButton = Button(740,390,200,250,myEventHandler)
         def HotdogRawButtonAction():
-            myGameManager.inventory.addItem(Item.HOTDOG_RAW)
+            self.ItemSelect(Item.HOTDOG_RAW)
             print("Raw juicy hot dawg acquired")
-        self.HotdogRawButton.setAction(HotdogBunButtonAction)
+        self.HotdogRawButton.setAction(HotdogRawButtonAction)
 
 
         self.Freezer_BG_Surface.addChildSurface(self.FriesRawButton)
@@ -788,18 +792,276 @@ class StorageRoomSurface(Surface):
 
         self.Freezer_BG_Surface.setVisible(False)
 
+    def ItemSelect(self, Item):
+        myGameManager.inventory.addItem(Item)
+
+
+
+class KitchenAssembly(Surface):
+    def __init__(self, Xpos, Ypos, Xscale, Yscale, kitchensurface):
+        super().__init__(Xpos, Ypos, Xscale, Yscale)
+
+
+        self.BG_Surface = Surface(0,0,SCREEN_WIDTH,SCREEN_HEIGHT)
+        self.BG_Surface.setImage(pygame.image.load("Assets/Kitchen/Assembly Empty.png"))
+
+        # Return Button
+        Return_Text = text("Return")
+        Return_Text.setFontSize(50)
+        Return_Text.setTextColor("#FFFFFF")
+
+        
+        Return_Button = Button(1100,10,150,100,myEventHandler)
+        Return_Button.addText(Return_Text)
+        def ReturnTokitchen():
+            self.nextSurface(kitchensurface)
+        Return_Button.setAction(ReturnTokitchen)
+
+        self.BG_Surface.addChildSurface(Return_Button)
+
+
+        self.addChildSurface(self.BG_Surface)
+
+class CookState(Enum):
+    EMPTY = 0
+    RAW = 1
+    COOKED = 2
+    PAGOD = 3
+
+class KitchenGrill(Surface):
+    def __init__(self, Xpos, Ypos, Xscale, Yscale,kitchensurface):
+        super().__init__(Xpos, Ypos, Xscale, Yscale)
+
+
+        self.BG_Surface = Surface(0,0,SCREEN_WIDTH,SCREEN_HEIGHT)
+        self.BG_Surface.setImage(pygame.image.load("Assets/Kitchen/grillEmpty.png"))
+
+        # Return Button
+        Return_Text = text("Return")
+        Return_Text.setFontSize(50)
+        Return_Text.setTextColor("#FFFFFF")
+
+        
+        Return_Button = Button(1100,10,150,100,myEventHandler)
+        Return_Button.addText(Return_Text)
+        def ReturnTokitchen():
+            self.nextSurface(kitchensurface)
+        Return_Button.setAction(ReturnTokitchen)
+
+        self.BG_Surface.addChildSurface(Return_Button)
+
+
+        # Burger
+        self.PattyRawImage1 = pygame.image.load("Assets/Kitchen/Grill Overlays/Grill Raw Patty 1.png")
+        self.PattyCookedImage1 = pygame.image.load("Assets/Kitchen/Grill Overlays/Grill Cooked Patty 1.png")
+
+        self.PattyRawImage2 = pygame.image.load("Assets/Kitchen/Grill Overlays/Grill Raw Patty 2.png")
+        self.PattyCookedImage2 = pygame.image.load("Assets/Kitchen/Grill Overlays/Grill Cooked Patty 2.png")
+
+
+        self.BurgerPatty1Surface = Surface(0,0,SCREEN_WIDTH,SCREEN_HEIGHT)
+        self.BurgerPatty2Surface = Surface(0,0,SCREEN_WIDTH,SCREEN_HEIGHT)
+
+        
+        # Hotdogs
+        self.HotdogsRawImage = pygame.image.load("Assets/Kitchen/Grill Overlays/Grill Hotdog Raw.png")
+        self.HotdogsCookedImage = pygame.image.load("Assets/Kitchen/Grill Overlays/Grill Hotdog Cooked.png")
+        
+        self.HotdogSurface = Surface(0,0,SCREEN_WIDTH,SCREEN_HEIGHT)
+
+        self.BG_Surface.addChildSurface(self.BurgerPatty1Surface)
+        self.BG_Surface.addChildSurface(self.BurgerPatty2Surface)
+        self.BG_Surface.addChildSurface(self.HotdogSurface)
+
+
+        ### LOGIC
+        self.Patty1State = CookState.COOKED
+        self.Patty2State = CookState.RAW
+        self.HotdogState = CookState.RAW
+
+        def UpdateGrill():
+            if self.Patty1State == CookState.EMPTY:
+                self.BurgerPatty1Surface.setImage(None)
+            elif self.Patty1State == CookState.RAW:
+                self.BurgerPatty1Surface.setImage(self.PattyRawImage1)
+            elif self.Patty1State == CookState.COOKED:
+                self.BurgerPatty1Surface.setImage(self.PattyCookedImage1)
+            
+            if self.Patty2State == CookState.EMPTY:
+                self.BurgerPatty2Surface.setImage(None)
+            elif self.Patty2State == CookState.RAW:
+                self.BurgerPatty2Surface.setImage(self.PattyRawImage2)
+            elif self.Patty2State == CookState.COOKED:
+                self.BurgerPatty2Surface.setImage(self.PattyCookedImage2)
+            
+            if self.HotdogState == CookState.EMPTY:
+                self.HotdogSurface.setImage(None)
+            elif self.HotdogState == CookState.RAW:
+                self.HotdogSurface.setImage(self.HotdogsRawImage)
+            elif self.HotdogState == CookState.COOKED:
+                self.HotdogSurface.setImage(self.HotdogsCookedImage)
+
+        
+        self.BG_Surface.setUpdateFunc(UpdateGrill)
+
+        # Buttons
+        self.HotdogsButton = Button(320,400,240,180,myEventHandler)
+        def HotdogButtonAction():
+            if self.HotdogState == CookState.RAW:
+                self.HotdogState = CookState.COOKED
+            elif self.HotdogState == CookState.COOKED:
+                self.HotdogState = CookState.EMPTY
+            elif self.HotdogState == CookState.EMPTY:
+                self.HotdogState = CookState.RAW
+        self.HotdogsButton.setAction(HotdogButtonAction)
+        #self.HotdogsButton.setImage(surfaceGuide)
+
+        self.BG_Surface.addChildSurface(self.HotdogsButton)
+        
+        self.Patty1Button = Button(620,400,110,130,myEventHandler)
+        def Patty1ButtonAction():
+            print("Patty1")
+        self.Patty1Button.setAction(Patty1ButtonAction)
+        #self.Patty1Button.setImage(surfaceGuide)
+
+        self.BG_Surface.addChildSurface(self.Patty1Button)
+
+        self.Patty2Button = Button(760,400,110,130,myEventHandler)
+        def Patty2ButtonAction():
+            print("Patty2")
+        self.Patty2Button.setAction(Patty2ButtonAction)
+        #self.Patty2Button.setImage(surfaceGuide)
+
+        self.BG_Surface.addChildSurface(self.Patty2Button)
+
+
+
+        self.addChildSurface(self.BG_Surface)
     
-    
-    
+    def setVisible(self, bool):
+        super().setVisible(bool)
+
+        
+
+class KitchenFryer(Surface):
+    def __init__(self, Xpos, Ypos, Xscale, Yscale, kitchensurface):
+        super().__init__(Xpos, Ypos, Xscale, Yscale)
+
+        self.BG_Surface = Surface(0,0,SCREEN_WIDTH,SCREEN_HEIGHT)
+        self.BG_Surface.setImage(pygame.image.load("Assets/Kitchen/Fryer/fryer.png"))
+
+        # Return Button
+        Return_Text = text("Return")
+        Return_Text.setFontSize(50)
+        Return_Text.setTextColor("#FFFFFF")
+
+        
+        Return_Button = Button(1100,10,150,100,myEventHandler)
+        Return_Button.addText(Return_Text)
+        def ReturnTokitchen():
+            self.nextSurface(kitchensurface)
+        Return_Button.setAction(ReturnTokitchen)
+
+        self.BG_Surface.addChildSurface(Return_Button)
+
+
+
+        self.addChildSurface(self.BG_Surface)
+
 
 class KitchenSurface(Surface):
     def __init__(self, Xpos, Ypos, Xscale, Yscale):
         super().__init__(Xpos, Ypos, Xscale, Yscale)
 
+
         self.BG_Surface = Surface(0,0,SCREEN_WIDTH,SCREEN_HEIGHT)
-        self.BG_Surface.setImage(pygame.image.load("Assets/Kitchen/KitchenBG.png"))
+        self.BG_Surface.setImage(pygame.image.load("Assets/Kitchen/KitchenMain.png"))
+
+        # Kitchen surfaces
+        self.kitchenAssembly = KitchenAssembly(0,0,SCREEN_WIDTH,SCREEN_HEIGHT, self.BG_Surface)
+        self.kitchenGrill = KitchenGrill(0,0,SCREEN_WIDTH,SCREEN_HEIGHT, self.BG_Surface)
+        self.kitchenFryer = KitchenFryer(0,0,SCREEN_WIDTH,SCREEN_HEIGHT, self.BG_Surface)
+
+        self.addChildSurface(self.kitchenAssembly)
+        self.addChildSurface(self.kitchenGrill)
+        self.addChildSurface(self.kitchenFryer)
+        
+
+        # Highlights
+        AssemblyHighlight = Surface(0,0,SCREEN_WIDTH,SCREEN_HEIGHT)
+        AssemblyHighlight.setImage(pygame.image.load("Assets/Kitchen/Main Overlays/Assembly Highlight.png"))
+
+        GrillHighlight = Surface(0,0,SCREEN_WIDTH,SCREEN_HEIGHT)
+        GrillHighlight.setImage(pygame.image.load("Assets/Kitchen/Main Overlays/Grill Highlight.png"))
+
+        TrashHighlight = Surface(0,0,SCREEN_WIDTH,SCREEN_HEIGHT)
+        TrashHighlight.setImage(pygame.image.load("Assets/Kitchen/Main Overlays/Trash Highlight.png"))
+
+        FryerHighlight = Surface(0,0,SCREEN_WIDTH,SCREEN_HEIGHT)
+        FryerHighlight.setImage(pygame.image.load("Assets/Kitchen/Main Overlays/Fryer Highlight.png"))
+
+        self.BG_Surface.addChildSurface(AssemblyHighlight)
+        self.BG_Surface.addChildSurface(GrillHighlight)
+        self.BG_Surface.addChildSurface(TrashHighlight)
+        self.BG_Surface.addChildSurface(FryerHighlight)
+
+        # Buttons
+        TrashHighlightButton = Button(80,500,250,300,myEventHandler)
+        def TrashHighlightAction():
+            myGameManager.inventory.clearSlot()
+            log("You are Trash")
+        TrashHighlightButton.setAction(TrashHighlightAction)
+
+
+        AssemblyHighlightButton = Button(150,450,300,50,myEventHandler)
+        def AssemblyHighlightAction():
+            self.BG_Surface.nextSurface(self.kitchenAssembly)
+            log("Assembly")
+        AssemblyHighlightButton.setAction(AssemblyHighlightAction)
+
+
+        GrillHighlightButton = Button(800,400,200,100,myEventHandler)
+        def GrillHighlightAction():
+            self.BG_Surface.nextSurface(self.kitchenGrill)
+            log("Grill")
+        GrillHighlightButton.setAction(GrillHighlightAction)
+
+
+        FryerHighlightButton = Button(350,350,300,100,myEventHandler)
+        def FryerHighlightAction():
+            self.BG_Surface.nextSurface(self.kitchenFryer)
+            log("Fryday")
+        FryerHighlightButton.setAction(FryerHighlightAction)
+
+
+
+        self.BG_Surface.addChildSurface(TrashHighlightButton)
+        self.BG_Surface.addChildSurface(AssemblyHighlightButton)
+        self.BG_Surface.addChildSurface(GrillHighlightButton)
+        self.BG_Surface.addChildSurface(FryerHighlightButton)
+
+        def BGSurfaceUpdateFunc():
+            TrashHighlight.setVisible(TrashHighlightButton.Hovered)
+            AssemblyHighlight.setVisible(AssemblyHighlightButton.Hovered)
+            GrillHighlight.setVisible(GrillHighlightButton.Hovered)
+            FryerHighlight.setVisible(FryerHighlightButton.Hovered)
+        
+        self.BG_Surface.setUpdateFunc(BGSurfaceUpdateFunc)
+
+
 
         self.addChildSurface(self.BG_Surface)
+    
+    def setVisible(self, bool):
+        super().setVisible(bool)
+
+        self.kitchenAssembly.setVisible(False)
+        self.kitchenGrill.setVisible(False)
+        self.kitchenFryer.setVisible(False)
+
+
+
+
 
 class DrivethroughSurface(Surface):
     def __init__(self, Xpos, Ypos, Xscale, Yscale):
@@ -809,6 +1071,7 @@ class DrivethroughSurface(Surface):
         self.BG_Surface.setImage(pygame.image.load("Assets/Drive Through/DrivethroughBG.jpg"))
 
         self.addChildSurface(self.BG_Surface)
+
 
 class WinScreen(Surface):
     def __init__(self, Xpos, Ypos, Xscale, Yscale):
@@ -866,4 +1129,3 @@ while True:
 
     pygame.display.update()
     clock.tick(CLOCK_TICK)
-

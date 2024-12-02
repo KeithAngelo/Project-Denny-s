@@ -1,2 +1,2 @@
 
-        self.child_layers = []  # Child layers, contains other surfaces
+        self.BG_Surface.setUpdateFunc(UpdateGrill)

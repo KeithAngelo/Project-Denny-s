@@ -431,8 +431,10 @@ class Item(Enum):
     FRIES_RAW = pygame.image.load("Assets/UI Elements/Item Icons/Fries Icon.png")
     HOTDOG_BUN = pygame.image.load("Assets/UI Elements/Item Icons/Hotdog Bun Icon.png")
     HOTDOG = pygame.image.load("Assets/UI Elements/Item Icons/Hotdog Icon.png")
+    HOTDOG_COOKED = pygame.image.load("Assets/UI Elements/Item Icons/Tender Juicy Cooked Icon.png")
     PATTY = pygame.image.load("Assets/UI Elements/Item Icons/Patty Icon.png")
     HOTDOG_RAW = pygame.image.load("Assets/UI Elements/Item Icons/Tender Juicy Icon.png")
+    PATTY_COOKED = pygame.image.load("Assets/UI Elements/Item Icons/Patty Cooked Icon.png")
 
 class Inventory:
     def __init__(self):
@@ -575,11 +577,11 @@ class GameplaySurface(Surface):
 
         
         # Change Views buttons
-        leftButton = Button(100,620,50,50,myEventHandler)
+        leftButton = Button(100,320,50,50,myEventHandler)
         leftButton.setImage(pygame.image.load("Assets/UI Elements/arrow left.jpg"))
         leftButton.setAction(self.turnLeft)
 
-        rightButton = Button(1130,620,50,50,myEventHandler)
+        rightButton = Button(1130,320,50,50,myEventHandler)
         rightButton.setImage(pygame.image.load("Assets/UI Elements/arrow right.jpg"))
         rightButton.setAction(self.turnRight)
 
@@ -874,45 +876,89 @@ class KitchenGrill(Surface):
         self.BG_Surface.addChildSurface(self.HotdogSurface)
 
 
-        ### LOGIC
-        self.Patty1State = CookState.COOKED
-        self.Patty2State = CookState.RAW
-        self.HotdogState = CookState.RAW
+        ### STATE
+        self.Patty1State = CookState.EMPTY
+        self.Patty2State = CookState.EMPTY
+        self.HotdogState = CookState.EMPTY
 
+        self.Patty1CookStart_ms = None
+        self.Patty2CookStart_ms = None
+        self.HotdogCookStart_ms = None
+
+        self.CookTime_ms = 10000
+
+        ### LOGIC ###
         def UpdateGrill():
+            # Patty 1 State Logic
             if self.Patty1State == CookState.EMPTY:
                 self.BurgerPatty1Surface.setImage(None)
+
             elif self.Patty1State == CookState.RAW:
                 self.BurgerPatty1Surface.setImage(self.PattyRawImage1)
+
+                if self.Patty1CookStart_ms is None:
+                    self.Patty1CookStart_ms = pygame.time.get_ticks()
+                cookTimeElapsed_ms = pygame.time.get_ticks() - self.Patty1CookStart_ms
+                if cookTimeElapsed_ms >= self.CookTime_ms:
+                    self.Patty1State = CookState.COOKED
+                    self.Patty1CookStart_ms = None
+
+
             elif self.Patty1State == CookState.COOKED:
                 self.BurgerPatty1Surface.setImage(self.PattyCookedImage1)
             
+            # Patty 2 State Logic
             if self.Patty2State == CookState.EMPTY:
                 self.BurgerPatty2Surface.setImage(None)
+
             elif self.Patty2State == CookState.RAW:
                 self.BurgerPatty2Surface.setImage(self.PattyRawImage2)
+
+                if self.Patty2CookStart_ms is None:
+                    self.Patty2CookStart_ms = pygame.time.get_ticks()
+                cookTimeElapsed_ms = pygame.time.get_ticks() - self.Patty2CookStart_ms
+                if cookTimeElapsed_ms >= self.CookTime_ms:
+                    self.Patty2State = CookState.COOKED
+                    self.Patty2CookStart_ms = None
+
             elif self.Patty2State == CookState.COOKED:
                 self.BurgerPatty2Surface.setImage(self.PattyCookedImage2)
             
+
+            # Hotdog State Logic
             if self.HotdogState == CookState.EMPTY:
                 self.HotdogSurface.setImage(None)
+
             elif self.HotdogState == CookState.RAW:
                 self.HotdogSurface.setImage(self.HotdogsRawImage)
+                if self.HotdogCookStart_ms is None:
+                    self.HotdogCookStart_ms = pygame.time.get_ticks()
+                cookTimeElapsed_ms = pygame.time.get_ticks() - self.HotdogCookStart_ms
+                if cookTimeElapsed_ms >= self.CookTime_ms:
+                    self.HotdogState = CookState.COOKED
+                    self.HotdogCookStart_ms = None
+
             elif self.HotdogState == CookState.COOKED:
                 self.HotdogSurface.setImage(self.HotdogsCookedImage)
 
         
-        self.BG_Surface.setUpdateFunc(UpdateGrill)
+        self.setUpdateFunc(UpdateGrill)
+
+        
 
         # Buttons
         self.HotdogsButton = Button(320,400,240,180,myEventHandler)
         def HotdogButtonAction():
-            if self.HotdogState == CookState.RAW:
-                self.HotdogState = CookState.COOKED
-            elif self.HotdogState == CookState.COOKED:
-                self.HotdogState = CookState.EMPTY
-            elif self.HotdogState == CookState.EMPTY:
-                self.HotdogState = CookState.RAW
+            if self.HotdogState == CookState.EMPTY:
+                if myGameManager.inventory.peekItem() == Item.HOTDOG_RAW:
+                    self.HotdogState = CookState.RAW
+                    myGameManager.inventory.clearSlot()
+            
+            if self.HotdogState == CookState.COOKED:
+                if myGameManager.inventory.peekItem() is None:
+                    myGameManager.inventory.addItem(Item.HOTDOG_COOKED)
+                    self.HotdogState = CookState.EMPTY
+
         self.HotdogsButton.setAction(HotdogButtonAction)
         #self.HotdogsButton.setImage(surfaceGuide)
 
@@ -920,6 +966,16 @@ class KitchenGrill(Surface):
         
         self.Patty1Button = Button(620,400,110,130,myEventHandler)
         def Patty1ButtonAction():
+            if self.Patty1State == CookState.EMPTY:
+                if myGameManager.inventory.peekItem() == Item.PATTY:
+                    self.Patty1State = CookState.RAW
+                    myGameManager.inventory.clearSlot()
+            
+            if self.Patty1State == CookState.COOKED:
+                if myGameManager.inventory.peekItem() is None:
+                    myGameManager.inventory.addItem(Item.PATTY_COOKED)
+                    self.Patty1State = CookState.EMPTY
+
             print("Patty1")
         self.Patty1Button.setAction(Patty1ButtonAction)
         #self.Patty1Button.setImage(surfaceGuide)
@@ -928,6 +984,15 @@ class KitchenGrill(Surface):
 
         self.Patty2Button = Button(760,400,110,130,myEventHandler)
         def Patty2ButtonAction():
+            if self.Patty2State == CookState.EMPTY:
+                if myGameManager.inventory.peekItem() == Item.PATTY:
+                    self.Patty2State = CookState.RAW
+                    myGameManager.inventory.clearSlot()
+            
+            if self.Patty2State == CookState.COOKED:
+                if myGameManager.inventory.peekItem() is None:
+                    myGameManager.inventory.addItem(Item.PATTY_COOKED)
+                    self.Patty2State = CookState.EMPTY
             print("Patty2")
         self.Patty2Button.setAction(Patty2ButtonAction)
         #self.Patty2Button.setImage(surfaceGuide)

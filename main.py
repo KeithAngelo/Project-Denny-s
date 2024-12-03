@@ -428,7 +428,7 @@ class Item(Enum):
     BURGER_BUN = pygame.image.load("Assets/UI Elements/Item Icons/Burger Bun Icon.png")
     BURGER = pygame.image.load("Assets/UI Elements/Item Icons/Burger Icon.png")
     FRIES = pygame.image.load("Assets/UI Elements/Item Icons/Fries Icon.png")
-    FRIES_RAW = pygame.image.load("Assets/UI Elements/Item Icons/Fries Icon.png")
+    FRIES_RAW = pygame.image.load("Assets/UI Elements/Item Icons/Fries Raw Icon.png")
     HOTDOG_BUN = pygame.image.load("Assets/UI Elements/Item Icons/Hotdog Bun Icon.png")
     HOTDOG = pygame.image.load("Assets/UI Elements/Item Icons/Hotdog Icon.png")
     HOTDOG_COOKED = pygame.image.load("Assets/UI Elements/Item Icons/Tender Juicy Cooked Icon.png")
@@ -885,7 +885,7 @@ class KitchenGrill(Surface):
         self.Patty2CookStart_ms = None
         self.HotdogCookStart_ms = None
 
-        self.CookTime_ms = 10000
+        self.CookTime_ms = 15000
 
         ### LOGIC ###
         def UpdateGrill():
@@ -1029,6 +1029,100 @@ class KitchenFryer(Surface):
 
         self.BG_Surface.addChildSurface(Return_Button)
 
+        # LEFT
+        self.FriesLeftSurface = Surface(0,0,SCREEN_WIDTH,SCREEN_HEIGHT)
+
+        self.WithFriesLeftImg = pygame.image.load("Assets\Kitchen\Fryer\With Fries Left.png")
+        self.CookingLeftImg = pygame.image.load("Assets\Kitchen\Fryer\Fries Cooking Left.png")
+
+        self.BG_Surface.addChildSurface(self.FriesLeftSurface)
+
+        # RIGHT
+        self.FriesRightSurface = Surface(0,0,SCREEN_WIDTH,SCREEN_HEIGHT)
+
+        self.WithFriesRightImg = pygame.image.load("Assets\Kitchen\Fryer\With Fries Right.png")
+        self.CookingRightImg = pygame.image.load("Assets\Kitchen\Fryer\Fries Cooking Right.png")
+
+        self.BG_Surface.addChildSurface(self.FriesRightSurface)
+
+        # STATE
+        self.LeftFriesState = CookState.EMPTY
+        self.RightFriesState = CookState.EMPTY
+
+        self.LeftFriesCookStart_ms = None
+        self.RightFriesCookStart_ms = None
+
+        self.CookTime_ms = 10000
+
+        def UpdateFryer():
+            # Left Fries Logic
+            if self.LeftFriesState == CookState.EMPTY:
+                self.FriesLeftSurface.setImage(None)
+
+            elif self.LeftFriesState == CookState.RAW:
+                self.FriesLeftSurface.setImage(self.CookingLeftImg)
+
+                if self.LeftFriesCookStart_ms is None:
+                    self.LeftFriesCookStart_ms = pygame.time.get_ticks()
+                cookTimeElapsed_ms = pygame.time.get_ticks() - self.LeftFriesCookStart_ms
+                if cookTimeElapsed_ms >= self.CookTime_ms:
+                    self.LeftFriesState = CookState.COOKED
+                    self.LeftFriesCookStart_ms = None
+
+            elif self.LeftFriesState == CookState.COOKED:
+                self.FriesLeftSurface.setImage(self.WithFriesLeftImg)
+
+            # Right Fries Logic
+            if self.RightFriesState == CookState.EMPTY:
+                self.FriesRightSurface.setImage(None)
+
+            elif self.RightFriesState == CookState.RAW:
+                self.FriesRightSurface.setImage(self.CookingRightImg)
+
+                if self.RightFriesCookStart_ms is None:
+                    self.RightFriesCookStart_ms = pygame.time.get_ticks()
+                cookTimeElapsed_ms = pygame.time.get_ticks() - self.RightFriesCookStart_ms
+                if cookTimeElapsed_ms >= self.CookTime_ms:
+                    self.RightFriesState = CookState.COOKED
+                    self.RightFriesCookStart_ms = None
+
+            elif self.RightFriesState == CookState.COOKED:
+                self.FriesRightSurface.setImage(self.WithFriesRightImg)
+
+        self.setUpdateFunc(UpdateFryer)
+
+        # Buttons
+        self.LeftButton = Button(300,250,300,300,myEventHandler)
+        def LeftButtonAction():
+            if self.LeftFriesState == CookState.EMPTY:
+                if myGameManager.inventory.peekItem() == Item.FRIES_RAW:
+                    self.LeftFriesState = CookState.RAW
+                    myGameManager.inventory.clearSlot()
+            
+            if self.LeftFriesState == CookState.COOKED:
+                if myGameManager.inventory.peekItem() is None:
+                    myGameManager.inventory.addItem(Item.FRIES)
+                    self.LeftFriesState = CookState.EMPTY
+        self.LeftButton.setAction(LeftButtonAction)
+        #self.LeftButton.setImage(surfaceGuide)
+
+        self.BG_Surface.addChildSurface(self.LeftButton)
+
+        self.RightButton = Button(670,250,300,300,myEventHandler)
+        def RightButtonAction():
+            if self.RightFriesState == CookState.EMPTY:
+                if myGameManager.inventory.peekItem() == Item.FRIES_RAW:
+                    self.RightFriesState = CookState.RAW
+                    myGameManager.inventory.clearSlot()
+            
+            if self.RightFriesState == CookState.COOKED:
+                if myGameManager.inventory.peekItem() is None:
+                    myGameManager.inventory.addItem(Item.FRIES)
+                    self.RightFriesState = CookState.EMPTY
+        self.RightButton.setAction(RightButtonAction)
+        #self.RightButton.setImage(surfaceGuide)
+
+        self.BG_Surface.addChildSurface(self.RightButton)
 
 
         self.addChildSurface(self.BG_Surface)

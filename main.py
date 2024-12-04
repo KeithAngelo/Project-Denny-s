@@ -797,7 +797,14 @@ class StorageRoomSurface(Surface):
     def ItemSelect(self, Item):
         myGameManager.inventory.addItem(Item)
 
-
+class FoodState(Enum):
+    EMPTY = 0
+    BUN_ONLY = 1
+    FULL = 2
+        
+class FoodType(Enum):
+    BURGER = 0
+    HOTDOG = 1
 
 class KitchenAssembly(Surface):
     def __init__(self, Xpos, Ypos, Xscale, Yscale, kitchensurface):
@@ -821,8 +828,214 @@ class KitchenAssembly(Surface):
 
         self.BG_Surface.addChildSurface(Return_Button)
 
+        # Burger
+        self.BurgerSurface = Surface(0,0,SCREEN_WIDTH,SCREEN_HEIGHT)
+
+        self.BurgerBunImg = pygame.image.load("Assets\Kitchen\Assembly Overlays\Assembly Burger Bun.png")
+        self.BurgerImg = pygame.image.load("Assets\Kitchen\Assembly Overlays\Assembly Burger.png")
+
+        self.BG_Surface.addChildSurface(self.BurgerSurface)
+
+        # Hotdogs
+        self.Hotdog1Surface = Surface(0,0,SCREEN_WIDTH,SCREEN_HEIGHT)
+        self.Hotdog2Surface = Surface(0,0,SCREEN_WIDTH,SCREEN_HEIGHT)
+        self.Hotdog3Surface = Surface(0,0,SCREEN_WIDTH,SCREEN_HEIGHT)
+
+        self.HotdogBun1Img = pygame.image.load("Assets\Kitchen\Assembly Overlays\Assembly Hotdog Bun 1.png")
+        self.HotdogBun2Img = pygame.image.load("Assets\Kitchen\Assembly Overlays\Assembly Hotdog Bun 2.png")
+        self.HotdogBun3Img = pygame.image.load("Assets\Kitchen\Assembly Overlays\Assembly Hotdog Bun 3.png")
+
+        self.Hotdog1Img = pygame.image.load("Assets\Kitchen\Assembly Overlays\Assembly Hotdog 1.png")
+        self.Hotdog2Img = pygame.image.load("Assets\Kitchen\Assembly Overlays\Assembly Hotdog 2.png")
+        self.Hotdog3Img = pygame.image.load("Assets\Kitchen\Assembly Overlays\Assembly Hotdog 3.png")
+
+        self.BG_Surface.addChildSurface(self.Hotdog3Surface)
+        self.BG_Surface.addChildSurface(self.Hotdog2Surface)
+        self.BG_Surface.addChildSurface(self.Hotdog1Surface)
+        
+        
+        
+
+        self.FoodType = None
+
+        self.BurgerState = FoodState.EMPTY
+        self.Hotdog1State = FoodState.EMPTY
+        self.Hotdog2State = FoodState.EMPTY
+        self.Hotdog3State = FoodState.EMPTY
+
+        def UpdateAssembly():
+
+            # Nightmare
+
+            if (self.Hotdog1State == FoodState.EMPTY) and (self.Hotdog2State == FoodState.EMPTY) and (self.Hotdog3State == FoodState.EMPTY) and (self.BurgerState == FoodState.EMPTY):
+                self.FoodType = None
+
+            if self.FoodType == None:
+                self.BurgerSurface.setImage(None)
+                self.Hotdog1Surface.setImage(None)
+                self.Hotdog2Surface.setImage(None)
+                self.Hotdog3Surface.setImage(None)
+            
+            if self.FoodType == FoodType.BURGER:
+               
+                self.Hotdog1Surface.setImage(None)
+                self.Hotdog2Surface.setImage(None)
+                self.Hotdog3Surface.setImage(None)
+
+                
+            
+                if self.BurgerState == FoodState.EMPTY:
+                    self.BurgerSurface.setImage(None)
+                
+                if self.BurgerState == FoodState.BUN_ONLY:
+                    self.BurgerSurface.setImage(self.BurgerBunImg)
+                
+                if self.BurgerState == FoodState.FULL:
+                    self.BurgerSurface.setImage(self.BurgerImg)
+            
+            if self.FoodType == FoodType.HOTDOG:
+                self.BurgerSurface.setImage(None)
+
+                if self.Hotdog1State == FoodState.EMPTY:
+                    self.Hotdog1Surface.setImage(None)
+                if self.Hotdog1State == FoodState.BUN_ONLY:
+                    self.Hotdog1Surface.setImage(self.HotdogBun1Img)
+                if self.Hotdog1State == FoodState.FULL:
+                    self.Hotdog1Surface.setImage(self.Hotdog1Img)
+                
+                if self.Hotdog2State == FoodState.EMPTY:
+                    self.Hotdog2Surface.setImage(None)
+                if self.Hotdog2State == FoodState.BUN_ONLY:
+                    self.Hotdog2Surface.setImage(self.HotdogBun2Img)
+                if self.Hotdog2State == FoodState.FULL:
+                    self.Hotdog2Surface.setImage(self.Hotdog2Img)
+                
+                if self.Hotdog3State == FoodState.EMPTY:
+                    self.Hotdog3Surface.setImage(None)
+                if self.Hotdog3State == FoodState.BUN_ONLY:
+                    self.Hotdog3Surface.setImage(self.HotdogBun3Img)
+                if self.Hotdog3State == FoodState.FULL:
+                    self.Hotdog3Surface.setImage(self.Hotdog3Img)
+
+
+        self.BG_Surface.setUpdateFunc(UpdateAssembly)
+
+        # Hotdog Buttons
+        self.Hotdog1Button = Button(450,250,100,120,myEventHandler)
+        def Hoddog1Action():
+            if self.FoodType == FoodType.HOTDOG:
+                if self.Hotdog1State == FoodState.EMPTY:
+                    if myGameManager.inventory.peekItem() == Item.HOTDOG_BUN:
+                        self.FoodType = FoodType.HOTDOG
+                        self.Hotdog1State = FoodState.BUN_ONLY
+                        myGameManager.inventory.clearSlot()
+                        
+                elif self.Hotdog1State  == FoodState.BUN_ONLY:
+                    if myGameManager.inventory.peekItem() == Item.HOTDOG_COOKED:
+                        self.Hotdog1State = FoodState.FULL
+                        myGameManager.inventory.clearSlot()
+
+                elif self.Hotdog1State == FoodState.FULL:
+                    if myGameManager.inventory.peekItem() is None:
+                        myGameManager.inventory.addItem(Item.HOTDOG)
+                        self.Hotdog1State = FoodState.EMPTY
+
+            elif self.FoodType == None:
+                if myGameManager.inventory.peekItem() == Item.HOTDOG_BUN:
+                    self.FoodType = FoodType.HOTDOG
+                    self.Hotdog1State = FoodState.BUN_ONLY
+                    myGameManager.inventory.clearSlot()
+            
+            
+        self.Hotdog1Button.setAction(Hoddog1Action)
+        self.BG_Surface.addChildSurface(self.Hotdog1Button)
+        #self.Hotdog1Button.setImage(surfaceGuide)
+
+        self.Hotdog2Button = Button(610,250,100,120,myEventHandler)
+        def Hoddog2Action():
+            if self.FoodType == FoodType.HOTDOG:
+                if self.Hotdog2State == FoodState.EMPTY:
+                    if myGameManager.inventory.peekItem() == Item.HOTDOG_BUN:
+                        self.FoodType = FoodType.HOTDOG
+                        self.Hotdog2State = FoodState.BUN_ONLY
+                        myGameManager.inventory.clearSlot()
+                
+                elif self.Hotdog2State  == FoodState.BUN_ONLY:
+                    if myGameManager.inventory.peekItem() == Item.HOTDOG_COOKED:
+                        self.Hotdog2State = FoodState.FULL
+                        myGameManager.inventory.clearSlot()
+
+                elif self.Hotdog2State == FoodState.FULL:
+                    if myGameManager.inventory.peekItem() is None:
+                        myGameManager.inventory.addItem(Item.HOTDOG)
+                        self.Hotdog2State = FoodState.EMPTY
+            
+            elif self.FoodType == None:
+                if myGameManager.inventory.peekItem() == Item.HOTDOG_BUN:
+                    self.FoodType = FoodType.HOTDOG
+                    self.Hotdog2State = FoodState.BUN_ONLY
+                    myGameManager.inventory.clearSlot()
+
+        self.Hotdog2Button.setAction(Hoddog2Action)
+        self.BG_Surface.addChildSurface(self.Hotdog2Button)
+        #self.Hotdog2Button.setImage(surfaceGuide)
+
+        self.Hotdog3Button = Button(750,250,100,120,myEventHandler)
+        def Hoddog3Action():
+            if self.FoodType == FoodType.HOTDOG:
+                if self.Hotdog3State == FoodState.EMPTY:
+                    if myGameManager.inventory.peekItem() == Item.HOTDOG_BUN:
+                        self.FoodType = FoodType.HOTDOG
+                        self.Hotdog3State = FoodState.BUN_ONLY
+                        myGameManager.inventory.clearSlot()
+                
+                elif self.Hotdog3State  == FoodState.BUN_ONLY:
+                    if myGameManager.inventory.peekItem() == Item.HOTDOG_COOKED:
+                        self.Hotdog3State = FoodState.FULL
+                        myGameManager.inventory.clearSlot()
+
+                elif self.Hotdog3State == FoodState.FULL:
+                    if myGameManager.inventory.peekItem() is None:
+                        myGameManager.inventory.addItem(Item.HOTDOG)
+                        self.Hotdog3State = FoodState.EMPTY
+            
+            elif self.FoodType == None:
+                if myGameManager.inventory.peekItem() == Item.HOTDOG_BUN:
+                    self.FoodType = FoodType.HOTDOG
+                    self.Hotdog3State = FoodState.BUN_ONLY
+                    myGameManager.inventory.clearSlot()
+
+        self.Hotdog3Button.setAction(Hoddog3Action)
+        self.BG_Surface.addChildSurface(self.Hotdog3Button)
+        #self.Hotdog3Button.setImage(surfaceGuide)
+
+        # Burger Button
+        self.BurgerButton = Button(370,280,550,150,myEventHandler)
+        def BurgerAction():
+            if self.FoodType is None:
+                if myGameManager.inventory.peekItem() == Item.BURGER_BUN:
+                    self.FoodType = FoodType.BURGER
+                    self.BurgerState = FoodState.BUN_ONLY
+                    myGameManager.inventory.clearSlot()
+
+            elif self.FoodType == FoodType.BURGER:
+                if self.BurgerState == FoodState.BUN_ONLY:
+                    if myGameManager.inventory.peekItem() == Item.PATTY_COOKED:
+                        self.BurgerState = FoodState.FULL
+                        myGameManager.inventory.clearSlot()
+                if self.BurgerState == FoodState.FULL:
+                    if myGameManager.inventory.peekItem() is None:
+                        myGameManager.inventory.addItem(Item.BURGER)
+                        self.BurgerState = FoodState.EMPTY
+                        self.FoodType = None
+
+        self.BurgerButton.setAction(BurgerAction)
+        self.BG_Surface.addChildSurface(self.BurgerButton)
+        #self.BurgerButton.setImage(surfaceGuide)
 
         self.addChildSurface(self.BG_Surface)
+    
+
 
 class CookState(Enum):
     EMPTY = 0
@@ -1007,7 +1220,6 @@ class KitchenGrill(Surface):
         super().setVisible(bool)
 
         
-
 class KitchenFryer(Surface):
     def __init__(self, Xpos, Ypos, Xscale, Yscale, kitchensurface):
         super().__init__(Xpos, Ypos, Xscale, Yscale)
@@ -1217,9 +1429,6 @@ class KitchenSurface(Surface):
         self.kitchenAssembly.setVisible(False)
         self.kitchenGrill.setVisible(False)
         self.kitchenFryer.setVisible(False)
-
-
-
 
 
 class DrivethroughSurface(Surface):
